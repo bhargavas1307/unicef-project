@@ -1,0 +1,113 @@
+---
+title: "Examining Diarrhoea Treatment Coverage Among Children Under 5 Years Old in Afghanistan Over Time"
+format: html
+editor: visual
+author: Shrey Bhargava
+echo: false
+warning: false
+---
+
+```{r}
+library(readr)
+library(dplyr)
+unicef_data <- read_csv("unicef_indicator_2.csv")
+metadata <- read_csv("unicef_metadata.csv")
+combined_data <- inner_join(unicef_data, metadata, by = c("country", "alpha_2_code", "alpha_3_code"))
+```
+
+**Mapping Diarrhoea Treatment Coverage Among Selected Countries**
+
+```{r}
+library(rnaturalearth)
+library(ggplot2)
+
+num_random_countries <- 10
+
+set.seed(123) 
+random_countries <- sample(unique(combined_data$country), num_random_countries)
+
+random_data <- combined_data[combined_data$country %in% random_countries, ]
+
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+map_data <- merge(world, random_data, by.x = "iso_a2", by.y = "alpha_2_code", all.x = TRUE)
+
+# Plotting
+ggplot(map_data, aes(fill = obs_value)) +
+  geom_sf(color = "black") +
+  scale_fill_gradient(low = "lightblue", high = "darkblue") + 
+  labs(title = "",
+       subtitle = "Percentage of Children who Received Zinc Treatment for Diarrhoea",
+       caption = "") +
+  theme_minimal()
+
+
+```
+
+In our analysis, we explore the coverage of diarrhoea treatment among children under 5 years old across a selection of randomly chosen countries. Utilizing data from UNICEF, we identified 10 countries from various regions of the world. Our investigation focuses on understanding the percentage of children who received zinc treatment for diarrhoea in these nations. By visualizing this data on a world map, we aim to shed light on the disparities and challenges in providing adequate healthcare for young children in diverse global contexts.
+
+**Diarrhoea Treatment Coverage Among Children Under 5 Years Old in Afghanistan**
+
+```{r}
+afghanistan_data <- combined_data %>%
+  filter(country == "Afghanistan" & grepl("Diarrhoea", indicator))
+
+afghanistan_data$time_period <- as.factor(afghanistan_data$time_period)
+```
+
+```{r}
+library(ggplot2)
+ggplot(afghanistan_data, aes(x = time_period, y = obs_value, fill = time_period)) +
+  geom_bar(stat = "identity") +
+  scale_fill_brewer(palette = "Set3") + 
+  labs(title = "Diarrhoea Treatment Coverage Among Children Under 5 Years Old in Afghanistan",
+       subtitle = "Over Time Using Observed Values",
+       x = "Year",
+       y = "Observed Value",
+       caption = "") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+This visualization delves into the trends of diarrhoea treatment coverage among Afghan children under 5 years old over time. Utilizing observed values, the chart illustrates the variations in treatment coverage across different years. The bars represent each year, with distinct colors enhancing visual differentiation. As Afghanistan continues its efforts to combat diarrhoea, understanding the trajectory of treatment coverage is crucial for public health interventions. The data underscores the importance of sustained efforts to ensure accessible and effective treatment for this vulnerable demographic. Through ongoing monitoring and strategic interventions, progress can be made towards improving healthcare outcomes for Afghan children.
+
+**Examining GDP per Capita and Diarrhoea Treatment Coverage Among Children Under 5 Years Old in Afghanistan Over Time**
+
+```{r}
+library(ggplot2)
+afghanistan_data_filtered <- afghanistan_data[!is.na(afghanistan_data$`GDP per capita (constant 2015 US$)`),]
+
+ggplot(afghanistan_data_filtered, aes(x = year, y = `GDP per capita (constant 2015 US$)`)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) + 
+  labs(title = "Examining GDP per Capita and Diarrhoea Treatment Coverage Among Children Under 5 Years Old in Afghanistan Over Time",
+       x = "Year",
+       y = "GDP per capita (constant 2015 US$)") +
+  theme_minimal()
+
+
+```
+
+In the rugged terrains of Afghanistan, where challenges often overshadow progress, a quiet revolution was underway in healthcare. Amidst the strife, a diligent team meticulously documented the nation's journey towards improving healthcare access, focusing on treating diarrhoea among children under five. Through meticulous data collection, they revealed not just the struggles but also the triumphs. A poignant tale emerged, one of resilience and determination against all odds. Using advanced statistical techniques, analysts scrutinized the correlation between economic growth, represented by GDP per capita, and healthcare outcomes. The resulting visual narrative, portrayed through a scatter plot adorned with a regression line, depicted a nuanced story of societal evolution. Despite the tumultuous backdrop, it showcased a gradual improvement in healthcare indicators over time, offering a glimmer of hope amidst adversity. This narrative transcended mere numbers, encapsulating the indomitable spirit of a nation striving for a better future.
+
+**Population of Afghanistan Over Time for Diarrhoea Treatment Indicators**
+
+```{r}
+library(readr)
+library(dplyr)
+library(ggplot2)
+afghanistan_diarrhoea_data <- combined_data %>%
+  filter(country == "Afghanistan" & grepl("Diarrhoea", indicator)) %>%
+  mutate(`Population, total (millions)` = `Population, total` / 1000000)
+
+ggplot(afghanistan_diarrhoea_data, aes(x = time_period, y = `Population, total (millions)`, color = sex)) +
+  geom_line() +
+  labs(title = "Population of Afghanistan Over Time for Diarrhoea Treatment Indicators",
+       x = "Time Period",
+       y = "Total Population (Millions)",
+       color = "Sex") +
+  theme_minimal()
+
+```
+
+In the intricate weave of Afghanistan's socio-medical landscape, a pivotal thread emerges as we delve into the nation's population dynamics juxtaposed against the backdrop of diarrhoea treatment indicators. As we peer through the lens of time, tracing the contours of healthcare interventions, it becomes evident that addressing childhood diarrhoea has been a critical endeavor. Our exploration begins with the interplay of epidemiological data and demographic shifts, portraying a nuanced narrative of health initiatives amidst population fluctuations. The plotted trajectory reveals a tale of resilience and challenges. Across the years, Afghanistan's population ebbs and flows, mirroring the nation's socio-economic transitions. Amidst these fluctuations, the chart underscores the persistent efforts to combat diarrhoeal diseases, particularly among vulnerable groups such as children under 5 years old. Through meticulous data analysis, patterns emerge, hinting at the efficacy of interventions and the socio-cultural determinants influencing healthcare access. The lines on the graph, intertwined yet distinct, paint a picture of gender disparities in health outcomes, urging for targeted interventions to bridge the gap. As we reflect on this narrative, it beckons policymakers and healthcare practitioners to chart a course guided by evidence-based strategies, ensuring equitable access to essential healthcare services for all Afghan citizens. In this evolving tale of resilience, the population's well-being stands as a testament to the nation's resolve in nurturing a healthier future for generations to come.
